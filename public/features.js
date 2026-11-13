@@ -167,7 +167,10 @@ async function renderAnalytics() {
     analyticsGroups.forEach((group, index) => {
       const method = aiProviders[group.method] || "本地规则";
       const difficulty = {basic: "基础", standard: "标准", advanced: "进阶"}[group.difficulty] || "";
-      select.add(new Option([roles.get(group.role), kinds[group.kind], method, difficulty].filter(Boolean).join(" · "), index));
+      const description = group.kind === "resume"
+        ? (group.description ? "JD：" + group.description.replace(/\s+/g, " ").slice(0, 40) : "岗位预设关键词")
+        : "";
+      select.add(new Option([roles.get(group.role), kinds[group.kind], method, difficulty, description].filter(Boolean).join(" · "), index));
     });
     if (Number(previous) < analyticsGroups.length && previous !== "") select.value = previous;
     renderAnalyticsGroup();
@@ -188,6 +191,10 @@ function renderAnalyticsGroup() {
     node("p", "平均 " + group.average + " 分 · 最近 " + group.latest + " 分" +
       (group.change === null ? " · 再完成一次训练后可查看变化" :
         " · 相对首次 " + (group.change >= 0 ? "+" : "") + group.change + " 分")));
+  if (group.kind === "resume") {
+    container.append(node("p", group.description ? "本组岗位描述：" + group.description : "本组使用岗位预设关键词。", "answer-copy"));
+    container.append(node("p", "简历仅在相同岗位描述下比较规则分；不同招聘要求的分数分别统计。", "hint"));
+  }
   container.append(node("h3", "最近十次成绩"));
   const series = node("div", null, "score-series");
   for (const point of group.series) {

@@ -42,9 +42,11 @@ def training_analytics(records):
         report = record["report"]
         method = report.get("evaluation", "local") if record["kind"] == "interview" else "local"
         difficulty = report.get("difficulty", "standard") if record["kind"] == "interview" else ""
-        grouped[(record["kind"], record["role"], method, difficulty)].append(record)
+        # 同一正文更换 JD 就会改变规则分，简历趋势必须隔离评分条件。
+        description = report.get("description", "") if record["kind"] == "resume" else ""
+        grouped[(record["kind"], record["role"], method, difficulty, description)].append(record)
     groups = []
-    for (kind, role, method, difficulty), items in grouped.items():
+    for (kind, role, method, difficulty, description), items in grouped.items():
         dimensions = defaultdict(list)
         for item in items:
             for dimension in item["report"]["dimensions"]:
@@ -52,6 +54,7 @@ def training_analytics(records):
         scores = [item["report"]["score"] for item in items]
         groups.append({
             "kind": kind, "role": role, "method": method, "difficulty": difficulty,
+            "description": description,
             "count": len(items), "average": round(mean(scores)), "latest": scores[-1],
             "change": scores[-1] - scores[0] if len(scores) > 1 else None,
             "dimensions": [{"label": label, "score": round(mean(values))} for label, values in dimensions.items()],

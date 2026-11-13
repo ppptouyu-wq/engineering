@@ -196,13 +196,14 @@ class WorkflowTest(unittest.TestCase):
         self.assertEqual(len(interview["questions"]), 5)
 
     def test_deepseek_configuration_uses_its_own_key(self):
-        with patch.dict(os.environ, {"DASHSCOPE_API_KEY": "old-provider-key"}, clear=True):
+        with patch.dict(os.environ, {"DASHSCOPE_API_KEY": "old-provider-key", "DEEPSEEK_API_KEY": "",
+                                    "DEEPSEEK_BASE_URL": "", "DEEPSEEK_MODEL": ""}):
             self.assertIsNone(DeepSeekClient.from_env())
             client = DeepSeekClient.from_env(" new-provider-key ")
             self.assertEqual(client.api_key, "new-provider-key")
             self.assertEqual(client.url, "https://api.deepseek.com/chat/completions")
         with patch.dict(os.environ, {"DEEPSEEK_API_KEY": "new-provider-key",
-                                    "DEEPSEEK_BASE_URL": "https://api.deepseek.com/v1"}, clear=True):
+                                    "DEEPSEEK_BASE_URL": "https://api.deepseek.com/v1"}):
             self.assertEqual(DeepSeekClient.from_env().url, "https://api.deepseek.com/v1/chat/completions")
 
     @staticmethod
@@ -308,7 +309,7 @@ class WorkflowTest(unittest.TestCase):
         config_path = self.db_path.parent / ".local" / "deepseek.json"
         fake_server = MagicMock()
         fake_server.__enter__.return_value = fake_server
-        with patch.dict(os.environ, {}, clear=True), \
+        with patch.dict(os.environ, {"DEEPSEEK_API_KEY": "", "DEEPSEEK_BASE_URL": "", "DEEPSEEK_MODEL": ""}), \
              patch.object(server, "Store"), \
              patch.object(server, "ThreadingHTTPServer", return_value=fake_server), \
              patch.object(server, "read_api_key", side_effect=lambda: read_api_key(config_path)), \
@@ -413,3 +414,45 @@ class WorkflowTest(unittest.TestCase):
         self.assertEqual(group["average"], 60)
         self.assertEqual(group["change"], 40)
         self.assertEqual([item["score"] for item in group["series"]], [40, 80])
+
+    def test_resume_analytics_does_not_turn_jd_changes_into_progress(self):
+        # 同一正文只换 JD 会改变规则分，不能把它解释为训练进步或退步。
+        resume = "项目经历\n我负责 Python 接口开发并执行18个测试。"
+        record_ids = []
+        scores = []
+        for index, description in enumerate(["Python", "Redis", "Python"]):
+            status, result = self.request("POST", "/api/resumes", {
+                "role": "backend", "resume": resume, "description": description,
+            })
+            self.assertEqual(status, 201)
+            record_ids.append(result["id"])
+            scores.append(result["report"]["score"])
+            with self.server.store.connect() as db:
+                db.execute("UPDATE records SET created_at = ? WHERE id = ?",
+                           (f"2026-11-0{index+1}T00:00:00Z", result["id"]))
+        self.assertNotEqual(scores[0], scores[1])
+        status, analytics = self.request("GET", "/api/analytics")
+        self.assertEqual(status, 200)
+        self.assertEqual(analytics["total"], 3)
+        self.assertEqual(len(analytics["groups"]), 2)
+        groups = {group["description"]: group for group in analytics["groups"]}
+        self.assertEqual(groups["Python"]["count"], 2)
+        self.assertEqual(groups["Python"]["change"], 0)
+        self.assertEqual([point["id"] for point in groups["Python"]["series"]],
+                         [record_ids[0], record_ids[2]])
+        self.assertEqual(groups["Redis"]["count"], 1)
+        self.assertIsNone(groups["Redis"]["change"])
+
+    def test_resume_analytics_keeps_legacy_default_reports_readable(self):
+        # 未保存 JD 的旧格式报告仍可与空 JD 报告统计，不要求用户删库。
+        for index, metadata in enumerate([{}, {"description": ""}, {"description": "Python"}]):
+            self.server.store.create(str(index).zfill(32), "resume", "backend", {}, {
+                "score": 50, "dimensions": [{"label": "岗位匹配", "score": 50}], **metadata,
+            })
+        status, analytics = self.request("GET", "/api/analytics")
+        self.assertEqual(status, 200)
+        self.assertEqual(len(analytics["groups"]), 2)
+        group = next(item for item in analytics["groups"] if item["description"] == "")
+        self.assertEqual(group["description"], "")
+        self.assertEqual(group["count"], 2)
+        self.assertEqual(group["change"], 0)
