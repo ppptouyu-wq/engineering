@@ -6,6 +6,9 @@ from statistics import mean
 from question_bank import ROLES
 
 
+MIN_RESUME_LENGTH = 20
+MAX_RESUME_LENGTH = 12000
+
 SECTIONS = {
     "教育背景": r"教育背景|教育经历|学历|education",
     "项目经历": r"项目经历|项目经验|科研经历|projects",
@@ -81,10 +84,13 @@ def resume_report(resume, role, description):
         suggestions.append({"title": "补充可以核实的成果", "detail": "为关键经历补充有来源的耗时、处理规模或测试数据。也可写明实际交付物或验收结果。"})
     if not suggestions:
         suggestions.append({"title": "优先呈现代表项目", "detail": "把与目标岗位最相关的经历排在前面，并核对数字、时间和技术名称。"})
+    draft = rewrite_draft(lines)
+    if not MIN_RESUME_LENGTH <= len(draft) <= MAX_RESUME_LENGTH:
+        draft = resume
     return {
         "score": round(sum(item["score"] * weight for item, weight in zip(dimensions, (0.4, 0.2, 0.2, 0.2)))),
         "dimensions": dimensions, "matched": matched, "missing": missing, "suggestions": suggestions,
-        "draft": rewrite_draft(lines),
+        "draft": draft,
     }
 
 

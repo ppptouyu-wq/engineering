@@ -1,7 +1,7 @@
 """简历版本差异与同类训练记录统计。"""
 
 from collections import defaultdict
-from difflib import ndiff
+from difflib import SequenceMatcher
 from statistics import mean
 
 from engine import resume_report
@@ -13,6 +13,17 @@ def compare_versions(before, after):
     description = after["description"]
     before_report = resume_report(before["resume"], role, description)
     after_report = resume_report(after["resume"], role, description)
+    before_lines = before["resume"].splitlines()
+    after_lines = after["resume"].splitlines()
+    matcher = SequenceMatcher(None, before_lines, after_lines, autojunk=False)
+    lines = []
+    for tag, old_start, old_end, new_start, new_end in matcher.get_opcodes():
+        if tag == "equal":
+            lines.extend({"type": " ", "text": line} for line in before_lines[old_start:old_end])
+        if tag in {"delete", "replace"}:
+            lines.extend({"type": "-", "text": line} for line in before_lines[old_start:old_end])
+        if tag in {"insert", "replace"}:
+            lines.extend({"type": "+", "text": line} for line in after_lines[new_start:new_end])
     return {
         "role": role, "description": description,
         "before": before, "after": after,
@@ -21,9 +32,7 @@ def compare_versions(before, after):
             {"label": left["label"], "before": left["score"], "after": right["score"]}
             for left, right in zip(before_report["dimensions"], after_report["dimensions"])
         ],
-        "lines": [{"type": line[0], "text": line[2:]}
-                  for line in ndiff(before["resume"].splitlines(), after["resume"].splitlines())
-                  if not line.startswith("? ")],
+        "lines": lines,
     }
 
 

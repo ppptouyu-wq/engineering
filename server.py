@@ -13,7 +13,7 @@ from threading import Lock
 from urllib.parse import urlsplit
 from uuid import uuid4
 
-from engine import interview_report, resume_report
+from engine import MAX_RESUME_LENGTH, MIN_RESUME_LENGTH, interview_report, resume_report
 from question_bank import ROLES
 from deepseek import DeepSeekClient, DeepSeekError
 from storage import Store
@@ -97,7 +97,7 @@ class Handler(BaseHTTPRequestHandler):
                 raise ApiError(400, "请选择有效岗位。")
             return 201, store.create_version(
                 uuid4().hex, validated_text(data.get("title"), "版本名称", 1, 80), role,
-                validated_text(data.get("resume"), "简历正文", 20, 12000),
+                validated_text(data.get("resume"), "简历正文", MIN_RESUME_LENGTH, MAX_RESUME_LENGTH),
                 validated_text(data.get("description", ""), "岗位描述", 0, 3000),
             )
         if method == "POST" and path == "/api/versions/compare":
@@ -204,7 +204,7 @@ class Handler(BaseHTTPRequestHandler):
                 raise ApiError(400, "请选择有效的目标岗位。")
             record_id = uuid4().hex
             if path == "/api/resumes":
-                resume = validated_text(data.get("resume"), "简历正文", 20, 12000)
+                resume = validated_text(data.get("resume"), "简历正文", MIN_RESUME_LENGTH, MAX_RESUME_LENGTH)
                 description = validated_text(data.get("description", ""), "岗位描述", 0, 3000)
                 use_ai = data.get("use_ai", False)
                 if type(use_ai) is not bool:

@@ -256,8 +256,15 @@ function renderResumeReport(container, report, role) {
   const practice = node("button", "用这份简历准备面试", "button primary");
   practice.type = "button";
   practice.addEventListener("click", () => {
-    if (byId("interview-context").value.trim() && !window.confirm("替换当前面试的个人经历？")) return;
-    byId("interview-context").value = report.draft.slice(0, 4000);
+    const contextInput = byId("interview-context");
+    const descriptionInput = byId("interview-description");
+    const context = report.draft.slice(0, 4000).replace(/[\uD800-\uDBFF]$/, "");
+    const description = report.description || "";
+    const replacesContext = contextInput.value.trim() && contextInput.value !== context;
+    const replacesDescription = description && descriptionInput.value.trim() && descriptionInput.value !== description;
+    if ((replacesContext || replacesDescription) && !window.confirm("用这份简历的材料替换当前面试表单中的内容？")) return;
+    contextInput.value = context;
+    if (description) descriptionInput.value = description;
     byId("interview-role").value = role;
     location.hash = "interview";
   });
