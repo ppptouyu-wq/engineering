@@ -10,12 +10,13 @@ from http.server import ThreadingHTTPServer
 from io import BytesIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from threading import Thread
+from threading import Event, Thread
 from unittest.mock import MagicMock, Mock, patch
 from pypdf import PdfWriter
 from pypdf.generic import DictionaryObject, NameObject, DecodedStreamObject
 
 from deepseek import DeepSeekClient
+from question_bank import ROLES
 from server import Handler
 from storage import Store
 import server
@@ -102,6 +103,37 @@ class WorkflowTest(unittest.TestCase):
         self.assertEqual(self.request("POST", "/api/resumes", {"role": "backend", "resume": "太短"})[0], 400)
         self.assertEqual(self.request("POST", "/api/interviews", {"role": "backend", "count": "3"})[0], 400)
         self.assertEqual(self.request("GET", "/api/history"), (200, []))
+
+    def test_different_interviews_can_finish_concurrently(self):
+        slow_id = "a" * 32
+        fast_id = "a" + "b" * 31
+        for record_id, role in [(slow_id, "backend"), (fast_id, "frontend")]:
+            questions = ROLES[role]["questions"][:3]
+            self.server.store.create(record_id, "interview", role, {"questions": questions, "use_ai": True})
+
+        slow_started = Event()
+        release_slow = Event()
+
+        def report(role, questions, answers):
+            if role == ROLES["backend"]["label"]:
+                slow_started.set()
+                if not release_slow.wait(timeout=5):
+                    raise TimeoutError("等待释放第一场面试点评超时")
+            return server.interview_report(questions, answers)
+
+        self.server.deepseek = Mock()
+        self.server.deepseek.report.side_effect = report
+        payload = {"answers": ["我会运行测试用例并核对实际验收结果。"] * 3}
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            slow = pool.submit(self.request, "POST", f"/api/interviews/{slow_id}/finish", payload)
+            try:
+                self.assertTrue(slow_started.wait(timeout=2))
+                fast = pool.submit(self.request, "POST", f"/api/interviews/{fast_id}/finish", payload)
+                self.assertEqual(fast.result(timeout=2)[0], 200)
+                self.assertFalse(slow.done())
+            finally:
+                release_slow.set()
+            self.assertEqual(slow.result()[0], 200)
 
     def configure_deepseek(self, responses):
         client = DeepSeekClient("test-key")

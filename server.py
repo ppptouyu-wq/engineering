@@ -12,6 +12,7 @@ from pathlib import Path
 from threading import Lock
 from urllib.parse import urlsplit
 from uuid import uuid4
+from weakref import WeakValueDictionary
 
 from engine import MAX_RESUME_LENGTH, MIN_RESUME_LENGTH, interview_report, resume_report
 from question_bank import ROLES
@@ -35,7 +36,18 @@ FINISH_PATH = re.compile(r"/api/interviews/([a-f0-9]{32})/finish")
 BOOKMARK_PATH = re.compile(r"/api/bookmarks/([a-f0-9]{32})")
 VERSION_PATH = re.compile(r"/api/versions/([a-f0-9]{32})")
 TASK_PATH = re.compile(r"/api/tasks/([a-f0-9]{32})")
-FINISH_LOCKS = tuple(Lock() for _ in range(16))
+FINISH_LOCKS = WeakValueDictionary()
+FINISH_LOCKS_GUARD = Lock()
+
+
+def interview_finish_lock(record_id):
+    # 请求持有锁的强引用，最后一个请求结束后自动清理。
+    with FINISH_LOCKS_GUARD:
+        lock = FINISH_LOCKS.get(record_id)
+        if lock is None:
+            lock = Lock()
+            FINISH_LOCKS[record_id] = lock
+        return lock
 
 
 class ApiError(Exception):
@@ -276,7 +288,7 @@ class Handler(BaseHTTPRequestHandler):
         answers = [validated_text(answer, f"第 {index} 题回答", 10, 2500)
                    for index, answer in enumerate(answers, 1)]
         # 同一场面试的并发提交共享结果，避免重复调用付费接口。
-        with FINISH_LOCKS[int(record_id[0], 16)]:
+        with interview_finish_lock(record_id):
             current = store.get(record_id)
             if not current:
                 raise ApiError(404, "找不到这场面试。")
