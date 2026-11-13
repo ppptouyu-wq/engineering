@@ -175,8 +175,26 @@ class Store:
         with self.connect() as db:
             return db.execute("DELETE FROM tasks WHERE id = ?", (task_id,)).rowcount > 0
 
-    def completed_reports(self):
+    def training_records(self):
         with self.connect() as db:
-            rows = db.execute("SELECT id, kind, role, created_at, report FROM records "
-                              "WHERE report IS NOT NULL ORDER BY created_at, id").fetchall()
-        return [{**dict(row), "report": json.loads(row["report"])} for row in rows]
+            rows = db.execute("""
+                SELECT id, kind, role, created_at,
+                       json_extract(report, '$.score') AS score,
+                       json_extract(report, '$.dimensions') AS dimensions,
+                       json_extract(report, '$.evaluation') AS evaluation,
+                       json_extract(report, '$.difficulty') AS difficulty,
+                       json_extract(report, '$.description') AS description
+                FROM records WHERE report IS NOT NULL ORDER BY created_at, id
+            """)
+            return [{**dict(row), "dimensions": json.loads(row["dimensions"])} for row in rows]
+
+    def training_counts(self):
+        with self.connect() as db:
+            row = db.execute("""
+                SELECT (SELECT COUNT(*) FROM resume_versions) AS versions,
+                       tasks.total AS tasks, tasks.completed AS completed_tasks,
+                       bookmarks.total AS bookmarks, bookmarks.reviewed AS reviewed_bookmarks
+                FROM (SELECT COUNT(*) AS total, COUNT(NULLIF(done, 0)) AS completed FROM tasks) AS tasks
+                CROSS JOIN (SELECT COUNT(*) AS total, COUNT(NULLIF(reviewed, 0)) AS reviewed FROM bookmarks) AS bookmarks
+            """).fetchone()
+            return dict(row)

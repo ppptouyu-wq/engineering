@@ -144,15 +144,13 @@ async function renderAnalytics() {
   const content = byId("analytics-content");
   content.textContent = "正在统计训练记录…";
   try {
-    const [result, tasks, bookmarks, versions] = await Promise.all([
-      api("/api/analytics"), api("/api/tasks"), api("/api/bookmarks"), api("/api/versions")
-    ]);
+    const result = await api("/api/analytics");
     const summary = byId("analytics-summary");
     summary.replaceChildren();
     for (const [label, value] of [
-      ["已完成训练", result.total], ["简历版本", versions.length],
-      ["计划完成", tasks.filter((task) => task.done).length + " / " + tasks.length],
-      ["题目复习", bookmarks.filter((item) => item.reviewed).length + " / " + bookmarks.length]
+      ["已完成训练", result.total], ["简历版本", result.summary.versions],
+      ["计划完成", result.summary.completed_tasks + " / " + result.summary.tasks],
+      ["题目复习", result.summary.reviewed_bookmarks + " / " + result.summary.bookmarks]
     ]) {
       const stat = node("div", null, "stat");
       const inner = node("div");

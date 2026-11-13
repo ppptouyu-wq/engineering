@@ -39,26 +39,26 @@ def compare_versions(before, after):
 def training_analytics(records):
     grouped = defaultdict(list)
     for record in records:
-        report = record["report"]
-        method = report.get("evaluation", "local") if record["kind"] == "interview" else "local"
-        difficulty = report.get("difficulty", "standard") if record["kind"] == "interview" else ""
+        kind = record["kind"]
+        method = (record["evaluation"] or "local") if kind == "interview" else "local"
+        difficulty = (record["difficulty"] or "standard") if kind == "interview" else ""
         # 同一正文更换 JD 就会改变规则分，简历趋势必须隔离评分条件。
-        description = report.get("description", "") if record["kind"] == "resume" else ""
-        grouped[(record["kind"], record["role"], method, difficulty, description)].append(record)
+        description = (record["description"] or "") if kind == "resume" else ""
+        grouped[(kind, record["role"], method, difficulty, description)].append(record)
     groups = []
     for (kind, role, method, difficulty, description), items in grouped.items():
         dimensions = defaultdict(list)
         for item in items:
-            for dimension in item["report"]["dimensions"]:
+            for dimension in item["dimensions"]:
                 dimensions[dimension["label"]].append(dimension["score"])
-        scores = [item["report"]["score"] for item in items]
+        scores = [item["score"] for item in items]
         groups.append({
             "kind": kind, "role": role, "method": method, "difficulty": difficulty,
             "description": description,
             "count": len(items), "average": round(mean(scores)), "latest": scores[-1],
             "change": scores[-1] - scores[0] if len(scores) > 1 else None,
             "dimensions": [{"label": label, "score": round(mean(values))} for label, values in dimensions.items()],
-            "series": [{"id": item["id"], "created_at": item["created_at"], "score": item["report"]["score"]}
+            "series": [{"id": item["id"], "created_at": item["created_at"], "score": item["score"]}
                        for item in items[-10:]],
         })
     return {"total": len(records), "groups": groups}

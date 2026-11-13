@@ -99,7 +99,9 @@ class Handler(BaseHTTPRequestHandler):
         version_path = VERSION_PATH.fullmatch(path)
         task_path = TASK_PATH.fullmatch(path)
         if method == "GET" and path == "/api/analytics":
-            return 200, training_analytics(store.completed_reports())
+            result = training_analytics(store.training_records())
+            result["summary"] = store.training_counts()
+            return 200, result
         if method == "GET" and path == "/api/versions":
             return 200, store.versions()
         if method == "POST" and path == "/api/versions":

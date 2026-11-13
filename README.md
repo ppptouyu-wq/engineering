@@ -176,7 +176,7 @@ flowchart LR
 | GET 或 POST /api/versions | 查询列表或提交 title、role、resume、description | 简历版本 |
 | GET 或 DELETE /api/versions/{id} | 版本 ID | 载入或删除版本 |
 | POST /api/versions/compare | before、after 版本 ID | 统一岗位条件下的分数与逐行差异 |
-| GET /api/analytics | 无 | 按条件分组的训练趋势与维度 |
+| GET /api/analytics | 无 | 训练趋势、维度及简历版本、计划和复习进度的汇总数量 |
 | GET 或 POST /api/tasks | 查询或提交 title、role、due_date | 练习计划 |
 | PATCH 或 DELETE /api/tasks/{id} | done 状态，或任务 ID | 更新或删除计划 |
 

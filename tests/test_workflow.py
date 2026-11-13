@@ -447,6 +447,31 @@ class WorkflowTest(unittest.TestCase):
         self.assertEqual(group["change"], 40)
         self.assertEqual([item["score"] for item in group["series"]], [40, 80])
 
+    def test_analytics_includes_activity_counts(self):
+        status, empty = self.request("GET", "/api/analytics")
+        self.assertEqual(status, 200)
+        self.assertEqual(empty["summary"], {
+            "versions": 0, "tasks": 0, "completed_tasks": 0, "bookmarks": 0, "reviewed_bookmarks": 0,
+        })
+
+        store = self.server.store
+        store.create_version("version", "初稿", "backend", "简历正文", "")
+        store.create_task("done", "已完成计划", "backend", "")
+        store.create_task("todo", "待办计划", "backend", "")
+        store.update_task("done", True)
+        store.bookmark("reviewed", "backend", "已复习问题", "原回答", "")
+        store.bookmark("unreviewed", "backend", "待复习问题", "原回答", "")
+        store.review_bookmark("reviewed", True, "复习回答")
+        store.create("unfinished", "interview", "backend", {})
+
+        status, result = self.request("GET", "/api/analytics")
+        self.assertEqual(status, 200)
+        self.assertEqual(result["total"], 0)
+        self.assertEqual(result["groups"], [])
+        self.assertEqual(result["summary"], {
+            "versions": 1, "tasks": 2, "completed_tasks": 1, "bookmarks": 2, "reviewed_bookmarks": 1,
+        })
+
     def test_resume_analytics_does_not_turn_jd_changes_into_progress(self):
         # 同一正文只换 JD 会改变规则分，不能把它解释为训练进步或退步。
         resume = "项目经历\n我负责 Python 接口开发并执行18个测试。"
