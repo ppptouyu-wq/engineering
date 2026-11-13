@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="面向求职训练的简历诊断、岗位模拟面试与复盘工作台。">
+  <title>CareerLab · 智能简历优化与模拟面试平台</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+  <script src="/features.js" defer></script>
+</head>
+<body>
+  <a href="#main" class="skip-link">跳到主要内容</a>
+  <aside class="sidebar">
+    <a class="brand" href="#home">
+      <span class="brand-icon"><svg aria-hidden="true"><use href="/icons.svg#logo"/></svg></span>
+      <span><strong>CareerLab</strong><small>求职训练工作台</small></span>
+    </a>
+    <p class="nav-heading">工作空间</p>
+    <nav aria-label="主导航">
+      <a href="#home" data-nav="home"><svg aria-hidden="true"><use href="/icons.svg#grid"/></svg>工作台</a>
+      <a href="#resume" data-nav="resume"><svg aria-hidden="true"><use href="/icons.svg#file"/></svg>简历优化</a>
+      <a href="#interview" data-nav="interview"><svg aria-hidden="true"><use href="/icons.svg#chat"/></svg>模拟面试</a>
+      <a href="#history" data-nav="history"><svg aria-hidden="true"><use href="/icons.svg#clock"/></svg>历史记录</a>
+      <a href="#bookmarks" data-nav="bookmarks"><svg aria-hidden="true"><use href="/icons.svg#file"/></svg>复习题夹</a>
+      <a href="#versions" data-nav="versions"><svg aria-hidden="true"><use href="/icons.svg#file"/></svg>简历版本</a>
+      <a href="#analytics" data-nav="analytics"><svg aria-hidden="true"><use href="/icons.svg#chart"/></svg>训练统计</a>
+      <a href="#plan" data-nav="plan"><svg aria-hidden="true"><use href="/icons.svg#check"/></svg>练习计划</a>
+    </nav>
+    <div class="sidebar-footer"><span class="status-dot"></span>本地工作空间</div>
+  </aside>
+  <div class="workspace">
+    <header class="topbar">
+      <span>求职训练 <span class="breadcrumb-divider">/</span> <strong id="breadcrumb">工作台</strong></span>
+      <span class="course-label"><svg aria-hidden="true"><use href="/icons.svg#logo"/></svg>高级软件工程 · 课程项目</span>
+    </header>
+    <main id="main" tabindex="-1">
+      <section id="home-page" data-page="home">
+        <div class="hero">
+          <div class="hero-copy">
+            <span class="hero-kicker"><svg aria-hidden="true"><use href="/icons.svg#spark"/></svg> 求职训练工作台</span>
+            <h1>简历优化与模拟面试</h1>
+            <p>针对目标岗位检查简历，用模拟面试练习表达。<br class="hero-break">每次训练都有一份可回看的反馈。</p>
+            <a class="button hero-button" href="#resume">开始简历诊断 <svg aria-hidden="true"><use href="/icons.svg#arrow"/></svg></a>
+          </div>
+          <svg class="hero-art" viewBox="0 0 450 260" aria-hidden="true">
+            <defs>
+              <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox">
+                <stop stop-color="#fbfaff" stop-opacity=".96"/><stop offset="1" stop-color="#d8d2ff" stop-opacity=".75"/>
+              </linearGradient>
+              <pattern id="dot-grid" width="18" height="18" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="#d7d4ff" opacity=".4"/></pattern>
+            </defs>
+            <rect x="80" y="5" width="350" height="244" fill="url(#dot-grid)"/>
+            <g fill="none" stroke="#c2b7ff" opacity=".35"><circle cx="258" cy="129" r="111"/><circle cx="258" cy="129" r="91"/><circle cx="258" cy="129" r="71"/></g>
+            <g transform="translate(167 44) rotate(-9 73 85)">
+              <rect x="7" y="10" width="146" height="172" rx="17" fill="#21166e" opacity=".27"/>
+              <rect width="146" height="172" rx="17" fill="url(#glass)" stroke="#fff" stroke-opacity=".62"/>
+              <rect x="19" y="19" width="36" height="36" rx="10" fill="#8a78ec"/>
+              <circle cx="37" cy="32" r="5.5" fill="#f7f4ff"/><path d="M27 46c2-10 18-10 20 0" fill="#f7f4ff"/>
+              <rect x="67" y="24" width="58" height="7" rx="3.5" fill="#6550bf"/>
+              <rect x="67" y="41" width="40" height="6" rx="3" fill="#a99ce8"/>
+              <path d="M20 74h106M20 98h106M20 122h79M20 146h87" stroke="#a89cdb" stroke-width="6" stroke-linecap="round"/>
+              <path d="M20 74h49M20 98h31M20 122h41" stroke="#7a64d4" stroke-width="6" stroke-linecap="round"/>
+            </g>
+            <g transform="translate(264 118) rotate(10 58 50)">
+              <rect x="4" y="7" width="126" height="90" rx="15" fill="#21166e" opacity=".3"/>
+              <rect width="126" height="90" rx="15" fill="#30217f" stroke="#bcaeff"/>
+              <rect x="16" y="15" width="41" height="5" rx="2.5" fill="#bcb0ff"/>
+              <path d="M17 67h92m-92-17h92m-92-17h92" stroke="#8a77ef" opacity=".36"/>
+              <path d="m18 67 21-11 16 4 20-19 12 5 21-17" fill="none" stroke="#b4f0da" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="108" cy="29" r="3.5" fill="#b4f0da"/>
+            </g>
+            <g fill="#e0d8ff"><path d="m105 64 3 9 9 3-9 3-3 9-3-9-9-3 9-3z"/><path d="m357 43 2 6 6 2-6 2-2 6-2-6-6-2 6-2z"/><circle cx="130" cy="190" r="3"/><circle cx="400" cy="83" r="3"/></g>
+          </svg>
+        </div>
+        <div class="stats-grid">
+          <div class="stat"><span class="stat-icon purple"><svg aria-hidden="true"><use href="/icons.svg#file"/></svg></span><div><span>简历诊断</span><strong id="resume-total">—</strong></div></div>
+          <div class="stat"><span class="stat-icon blue"><svg aria-hidden="true"><use href="/icons.svg#chat"/></svg></span><div><span>面试练习</span><strong id="interview-total">—</strong></div></div>
+          <div class="stat"><span class="stat-icon mint"><svg aria-hidden="true"><use href="/icons.svg#chart"/></svg></span><div><span>最近一次得分</span><strong id="latest-score">—</strong></div></div>
+        </div>
+        <div class="section-heading"><h2>开始训练</h2><p>从岗位要求出发，准备简历与面试。</p></div>
+        <div class="feature-grid">
+          <a class="feature" href="#resume">
+            <span class="feature-icon purple"><svg aria-hidden="true"><use href="/icons.svg#file"/></svg></span>
+            <span class="feature-body"><strong>简历优化</strong><span>检查岗位关键词、简历结构和项目成果，获取修改建议与整理稿。</span><span class="feature-link">打开简历诊断 <svg aria-hidden="true"><use href="/icons.svg#arrow"/></svg></span></span>
+          </a>
+          <a class="feature" href="#interview">
+            <span class="feature-icon blue"><svg aria-hidden="true"><use href="/icons.svg#chat"/></svg></span>
+            <span class="feature-body"><strong>模拟面试</strong><span>选择岗位逐题作答，复盘回答要点、细节和可验证的证据。</span><span class="feature-link">开始面试练习 <svg aria-hidden="true"><use href="/icons.svg#arrow"/></svg></span></span>
+          </a>
+        </div>
+        <section class="recent">
+          <div class="section-heading row"><h2>最近活动</h2><a href="#history">查看历史 <svg aria-hidden="true"><use href="/icons.svg#arrow"/></svg></a></div>
+          <div id="recent-records" class="panel record-list" aria-live="polite">正在读取记录…</div>
+        </section>
+      </section>
+      <section id="resume-page" data-page="resume" hidden>
+        <div class="page-intro"><span class="eyebrow">01 / 简历诊断</span><h1>简历优化</h1><p>针对目标岗位检查简历，找出可以补充证据或改进表达的地方。</p></div>
+        <form id="resume-form" class="panel form-panel">
+          <div class="field"><label for="resume-role">目标岗位</label><select id="resume-role" name="role" required></select></div>
+          <div class="field">
+            <label for="description">岗位描述 <span>选填</span></label>
+            <textarea id="description" name="description" rows="3" maxlength="3000" placeholder="粘贴岗位职责和任职要求，或留空使用岗位预设关键词。"></textarea>
+          </div>
+          <div class="field">
+            <div class="field-top"><label for="resume-text">简历正文</label><div class="field-actions">
+              <button type="button" id="resume-sample" class="text-button">填入样例</button>
+              <label class="upload-button" for="resume-file"><svg aria-hidden="true"><use href="/icons.svg#upload"/></svg>上传 PDF / 文本</label>
+              <input id="resume-file" class="file-input" type="file" accept=".pdf,.txt,.md,application/pdf,text/plain,text/markdown" aria-label="上传 PDF 或文本简历">
+            </div></div>
+            <textarea id="resume-text" name="resume" rows="10" required minlength="20" maxlength="12000" placeholder="粘贴教育背景、项目经历和专业技能等内容。"></textarea>
+            <span class="hint">支持文字型 PDF（5 MB 内、最多 10 页）及 UTF-8 文本。提取后请核对排版与正文，扫描件需先进行 OCR。</span>
+            <p id="import-status" class="hint" role="status"></p>
+          </div>
+          <p class="form-error" id="resume-error" role="alert" hidden></p>
+          <div id="resume-ai-choice" class="field" hidden>
+            <label><input type="checkbox" name="use_ai" aria-describedby="resume-ai-hint"> 使用 DeepSeek 优化简历表达</label>
+            <span id="resume-ai-hint" class="hint">开启后，简历正文与岗位描述会发送至 DeepSeek。请先移除联系方式等个人信息，并核对生成稿。</span>
+          </div>
+          <button class="button primary" type="submit"><svg aria-hidden="true"><use href="/icons.svg#spark"/></svg>生成诊断报告</button>
+          <div class="field"><label for="resume-version-title">保存简历版本</label>
+            <div class="button-row"><input id="resume-version-title" maxlength="80" placeholder="例如 校招初稿 / 后端岗位修改版" aria-label="简历版本名称">
+              <button id="save-current-version" class="button secondary" type="button">保存当前正文</button>
+            </div><span id="version-save-status" class="hint" role="status"></span>
+          </div>
+        </form>
+        <div id="resume-result" class="result" tabindex="-1" hidden></div>
+      </section>
+      <section id="interview-page" data-page="interview" hidden>
+        <div class="page-intro"><span class="eyebrow">02 / 岗位练习</span><h1>模拟面试</h1><p>选择岗位，逐题用文字作答，提交后查看评分和逐题点评。</p></div>
+        <form id="interview-form" class="panel form-panel">
+          <div class="field"><label for="interview-role">面试岗位</label><select id="interview-role" name="role" required></select></div>
+          <div class="field"><label for="interview-difficulty">面试难度</label>
+            <select id="interview-difficulty" name="difficulty">
+              <option value="basic">基础 · 实习与入门</option>
+              <option value="standard" selected>标准 · 校招与项目实践</option>
+              <option value="advanced">进阶 · 方案比较与边界分析</option>
+            </select>
+          </div>
+          <div class="field"><label for="interview-description">目标岗位描述 <span>选填</span></label>
+            <textarea id="interview-description" name="description" rows="3" maxlength="3000" placeholder="粘贴招聘 JD，启用 DeepSeek 后按岗位要求定制题目。"></textarea>
+          </div>
+          <div class="field"><label for="interview-context">个人项目与经历 <span>选填</span></label>
+            <textarea id="interview-context" name="context" rows="4" maxlength="4000" placeholder="填写希望被问到的项目经历，也可从简历诊断报告点击「用这份简历准备面试」。"></textarea>
+            <span class="hint">启用 DeepSeek 后用于定制出题。使用本地题库时，按所选岗位与难度出题。</span>
+          </div>
+          <fieldset class="field"><legend>练习题数</legend><div class="choices">
+            <label><input type="radio" name="count" value="3" checked> 快速练习 · 3 题</label>
+            <label><input type="radio" name="count" value="5"> 完整练习 · 5 题</label>
+          </div></fieldset>
+          <div class="field">
+            <label id="ai-choice" hidden><input type="checkbox" name="use_ai" checked aria-describedby="ai-hint"> 使用 DeepSeek 生成题目与点评</label>
+            <p id="ai-hint" class="hint">当前使用本地题库和规则评分。配置 DeepSeek API Key 后可启用 DeepSeek。</p>
+          </div>
+          <p class="form-error" id="interview-error" role="alert" hidden></p>
+          <button class="button primary" type="submit">开始面试 <svg aria-hidden="true"><use href="/icons.svg#arrow"/></svg></button>
+        </form>
+        <form id="answer-form" class="panel form-panel" hidden>
+          <div class="question-meta"><span class="tag purple" id="question-category"></span><span id="question-progress"></span></div>
+          <p id="question-source" class="hint" role="status"></p>
+          <progress id="question-meter" aria-label="当前题号"></progress>
+          <h2 id="question" tabindex="-1"></h2>
+          <div class="field"><label for="answer">你的回答</label>
+            <textarea id="answer" rows="7" minlength="10" maxlength="2500" required placeholder="结合具体场景，写清思路、做法和验证方式。"></textarea>
+            <span class="hint">每题需填写 10–2,500 字符。</span>
+          </div>
+          <p class="form-error" id="answer-error" role="alert" hidden></p>
+          <div class="button-row">
+            <button class="button secondary" id="previous-question" type="button">上一题</button>
+            <button class="button primary" id="next-question" type="submit">下一题</button>
+            <button class="text-button" id="cancel-interview" type="button">退出练习</button>
+          </div>
+        </form>
+        <div id="interview-result" class="result" tabindex="-1" hidden></div>
+      </section>
+      <section id="history-page" data-page="history" hidden>
+        <div class="page-intro"><span class="eyebrow">03 / 训练复盘</span><h1>历史记录</h1><p>回看已完成的诊断和面试，记录保存在本机 SQLite 数据库。</p></div>
+        <div class="filters" aria-label="筛选历史">
+          <button type="button" class="filter" data-filter="all" aria-pressed="true">全部</button>
+          <button type="button" class="filter" data-filter="resume" aria-pressed="false">简历诊断</button>
+          <button type="button" class="filter" data-filter="interview" aria-pressed="false">模拟面试</button>
+        </div>
+        <div id="history-records" class="panel record-list" aria-live="polite">正在读取记录…</div>
+        <div id="history-detail" class="result" tabindex="-1" hidden></div>
+      </section>
+      <section id="bookmarks-page" data-page="bookmarks" hidden>
+        <div class="page-intro"><span class="eyebrow">04 / 查漏补缺</span><h1>复习题夹</h1><p>收藏报告中需要练习的题目，保留当次回答和改进建议。</p></div>
+        <div class="field"><label for="review-filter">复习进度</label><select id="review-filter">
+          <option value="all">全部题目</option><option value="pending">待复习</option><option value="reviewed">已复习</option>
+        </select></div>
+        <div id="bookmark-list" class="result" aria-live="polite"></div>
+      </section>
+      <section data-page="versions" hidden>
+        <div class="page-intro"><span class="eyebrow">05 / 简历迭代</span><h1>简历版本</h1><p>保存不同岗位的简历稿，对照修改内容与诊断维度。</p></div>
+        <div id="version-list" class="panel record-list" aria-live="polite"></div>
+        <form id="compare-form" class="panel form-panel result">
+          <h2>比较两个版本</h2>
+          <div class="field"><label for="compare-before">修改前版本</label><select id="compare-before" required></select></div>
+          <div class="field"><label for="compare-after">修改后版本</label><select id="compare-after" required></select></div>
+          <p class="hint">两份简历均采用修改后版本的目标岗位和岗位描述计算规则分。</p>
+          <p id="compare-error" class="form-error" role="alert" hidden></p>
+          <button class="button primary" type="submit">查看差异</button>
+        </form>
+        <div id="comparison-result" class="result" tabindex="-1" hidden></div>
+      </section>
+      <section data-page="analytics" hidden>
+        <div class="page-intro"><span class="eyebrow">06 / 训练复盘</span><h1>训练统计</h1><p>按岗位、评分方式和难度查看训练变化，找到需要加强的维度。</p></div>
+        <div id="analytics-summary" class="stats-grid"></div>
+        <div class="panel form-panel">
+          <div class="field"><label for="analytics-group">选择训练分组</label><select id="analytics-group"></select></div>
+          <div id="analytics-content" class="field" aria-live="polite"></div>
+        </div>
+      </section>
+      <section data-page="plan" hidden>
+        <div class="page-intro"><span class="eyebrow">07 / 持续准备</span><h1>练习计划</h1><p>把简历建议、薄弱维度或自己的安排变成待办任务。</p></div>
+        <form id="task-form" class="panel form-panel">
+          <div class="field"><label for="task-title">计划内容</label><input id="task-title" name="title" required maxlength="200" placeholder="例如 补充项目中的性能验证数据"></div>
+          <div class="field"><label for="task-role">目标岗位</label><select id="task-role" name="role" required></select></div>
+          <div class="field"><label for="task-date">计划日期 <span>选填</span></label><input type="date" id="task-date" name="due_date"></div>
+          <p id="task-error" class="form-error" role="alert" hidden></p>
+          <button class="button primary" type="submit">添加计划</button>
+        </form>
+        <div class="filters result"><button class="filter" data-task-filter="all" aria-pressed="true">全部</button>
+          <button class="filter" data-task-filter="pending" aria-pressed="false">待完成</button>
+          <button class="filter" data-task-filter="done" aria-pressed="false">已完成</button></div>
+        <div id="task-list" class="result" aria-live="polite"></div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
