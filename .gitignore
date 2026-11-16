@@ -12,4 +12,5 @@ data/
 *.sqlite3
 *.sqlite3-*
 *.log
+*.ruff_cache/
 
