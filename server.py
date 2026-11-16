@@ -2,6 +2,7 @@
 
 import argparse
 import getpass
+import ipaddress
 import json
 import logging
 import os
@@ -14,14 +15,13 @@ from urllib.parse import urlsplit
 from uuid import uuid4
 from weakref import WeakValueDictionary
 
-from engine import MAX_RESUME_LENGTH, MIN_RESUME_LENGTH, interview_report, resume_report
-from question_bank import ROLES
 from deepseek import DeepSeekClient, DeepSeekError
-from storage import Store
+from engine import MAX_RESUME_LENGTH, MIN_RESUME_LENGTH, interview_report, resume_report
 from local_config import read_api_key, save_api_key
-from resume_files import ResumeFileError, extract_pdf
 from progress import compare_versions, training_analytics
-
+from question_bank import ROLES
+from resume_files import ResumeFileError, extract_pdf
+from storage import Store
 
 ROOT = Path(__file__).resolve().parent
 STATIC = {
@@ -38,6 +38,27 @@ VERSION_PATH = re.compile(r"/api/versions/([a-f0-9]{32})")
 TASK_PATH = re.compile(r"/api/tasks/([a-f0-9]{32})")
 FINISH_LOCKS = WeakValueDictionary()
 FINISH_LOCKS_GUARD = Lock()
+LOGGER = logging.getLogger(__name__)
+
+
+def server_host(value):
+    host = value.strip()
+    if host.lower() == "localhost":
+        return "localhost"
+    try:
+        return str(ipaddress.ip_address(host))
+    except ValueError:
+        raise argparse.ArgumentTypeError("监听地址必须是 localhost 或有效的 IP 地址。") from None
+
+
+def server_port(value):
+    try:
+        port = int(value)
+    except ValueError:
+        raise argparse.ArgumentTypeError("端口必须是整数。") from None
+    if not 1 <= port <= 65535:
+        raise argparse.ArgumentTypeError("端口必须在 1–65535 之间。")
+    return port
 
 
 def interview_finish_lock(record_id):
@@ -54,6 +75,13 @@ class ApiError(Exception):
     def __init__(self, status, message):
         super().__init__(message)
         self.status = status
+
+
+class CareerLabHTTPServer(ThreadingHTTPServer):
+    """允许部署时调整监听地址，并避免退出时等待空闲连接。"""
+
+    daemon_threads = True
+    allow_reuse_address = True
 
 
 def validated_text(value, name, minimum, maximum):
@@ -86,7 +114,7 @@ class Handler(BaseHTTPRequestHandler):
         except ApiError as error:
             status, result = error.status, {"error": str(error)}
         except Exception:
-            logging.exception("Request failed")
+            LOGGER.exception("Request failed")
             status, result = 500, {"error": "服务器暂时无法处理请求，请重试。"}
         self.send_bytes(status, json.dumps(result, ensure_ascii=False).encode("utf-8"), "application/json; charset=utf-8")
 
@@ -98,6 +126,9 @@ class Handler(BaseHTTPRequestHandler):
         bookmark_path = BOOKMARK_PATH.fullmatch(path)
         version_path = VERSION_PATH.fullmatch(path)
         task_path = TASK_PATH.fullmatch(path)
+        if method == "GET" and path == "/api/health":
+            store.ping()
+            return 200, {"status": "ok", "ai_available": deepseek is not None}
         if method == "GET" and path == "/api/analytics":
             result = training_analytics(store.training_records())
             result["summary"] = store.training_counts()
@@ -234,7 +265,7 @@ class Handler(BaseHTTPRequestHandler):
                             report.update(optimized, optimization="deepseek", model=deepseek.model)
                             report["notice"] = "改写稿由 DeepSeek 生成，请逐项核对经历、技能和数据后使用。"
                         except DeepSeekError as error:
-                            logging.warning("DeepSeek 简历优化失败，使用本地整理：%s", error)
+                            LOGGER.warning("DeepSeek 简历优化失败，使用本地整理：%s", error)
                 store.create(record_id, "resume", role, {"description": description}, report)
                 return 201, {"id": record_id, "report": report}
             count = data.get("count")
@@ -263,7 +294,7 @@ class Handler(BaseHTTPRequestHandler):
                                                    difficulty, description, context)
                     source = "deepseek"
                 except DeepSeekError as error:
-                    logging.warning("DeepSeek 出题失败，使用本地题库：%s", error)
+                    LOGGER.warning("DeepSeek 出题失败，使用本地题库：%s", error)
             store.create(record_id, "interview", role, {
                 "questions": questions, "question_source": source, "use_ai": use_ai,
                 "difficulty": difficulty, "description": description, "context": context,
@@ -310,7 +341,7 @@ class Handler(BaseHTTPRequestHandler):
             try:
                 return deepseek.report(ROLES[role]["label"], questions, answers)
             except DeepSeekError as error:
-                logging.warning("DeepSeek 点评失败，使用本地规则：%s", error)
+                LOGGER.warning("DeepSeek 点评失败，使用本地规则：%s", error)
         report = interview_report(questions, answers)
         report["evaluation"] = "local"
         if use_ai:
@@ -342,13 +373,17 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Cache-Control", "no-store")
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("Content-Security-Policy", "default-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'")
+        self.send_header("Referrer-Policy", "no-referrer")
+        self.send_header("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
         self.end_headers()
         self.wfile.write(body)
 
 
 def main():
     parser = argparse.ArgumentParser(description="启动智能简历优化与模拟面试平台")
-    parser.add_argument("--port", type=int, default=8000)
+    parser.add_argument("--host", type=server_host, default="127.0.0.1",
+                        help="监听地址，默认 127.0.0.1；局域网部署可设为 0.0.0.0")
+    parser.add_argument("--port", type=server_port, default=8000)
     parser.add_argument("--db", type=Path, default=ROOT / "data" / "career_lab.sqlite3")
     parser.add_argument("--configure-ai", action="store_true", help="启动时输入 DeepSeek API Key，仅在本次服务进程中使用")
     parser.add_argument("--save-api-key", action="store_true", help="输入并保存 DeepSeek API Key，之后启动自动读取")
@@ -367,7 +402,7 @@ def main():
         deepseek = DeepSeekClient.from_env(api_key)
     except (ValueError, OSError) as error:
         parser.error(str(error))
-    with ThreadingHTTPServer(("127.0.0.1", args.port), Handler) as server:
+    with CareerLabHTTPServer((args.host, args.port), Handler) as server:
         server.store = Store(args.db)
         server.deepseek = deepseek
         if args.save_api_key:
@@ -376,7 +411,13 @@ def main():
             except OSError:
                 parser.error("密钥保存失败，请检查项目目录的写入权限。")
             print("密钥已保存到 .local/deepseek.json。以后运行 python server.py 即可。", flush=True)
-        print(f"智能简历优化与模拟面试平台  http://127.0.0.1:{server.server_port}", flush=True)
+        display_host = "127.0.0.1" if args.host == "0.0.0.0" else args.host
+        if ":" in display_host:
+            display_host = f"[{display_host}]"
+        print(f"智能简历优化与模拟面试平台  http://{display_host}:{server.server_port}", flush=True)
+        if args.host not in {"127.0.0.1", "::1", "localhost"}:
+            print("注意：当前服务可从本机以外的设备访问，但应用没有登录和权限隔离，请仅在可信网络使用。",
+                  flush=True)
         print("DeepSeek 配置已读取，首次出题时验证接口连接。" if deepseek
               else "未读取到 DeepSeek API Key。可用 python server.py --save-api-key 输入并保存。", flush=True)
         try:

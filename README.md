@@ -6,6 +6,19 @@ CareerLab 面向需要按岗位准备简历和面试的学生。用户可以先�
 
 ## 最近迭代
 
+### 2026-11-16：增强部署能力与旧数据兼容
+
+本轮在不改变页面主流程的前提下优化后端运行边界，补齐部署和健康检查能力。
+
+- **可配置监听地址**：新增 `--host`，默认仍只监听 `127.0.0.1`；局域网演示可显式使用 `0.0.0.0`，启动时提示无登录和权限隔离的风险。
+- **健康检查**：新增 `GET /api/health`，同时检查 HTTP 服务、SQLite 数据库和 DeepSeek 配置状态。
+- **并发与存储**：后台线程改为守护线程，便于停止服务；SQLite 增加锁等待和 WAL 同步配置。
+- **旧报告兼容**：缺少分数或维度字段的历史报告不再导致训练统计接口失败，完整记录继续正常统计。
+- **外部服务配置**：DeepSeek 请求超时可通过 `DEEPSEEK_TIMEOUT_SECONDS` 配置为 1–120 秒。
+- **细节优化**：PDF 正文长度改为线性累计；补充更严格的端口、监听地址校验和响应安全头。
+
+本轮验证：25 项自动化测试全部通过，Python 编译检查、JavaScript 语法检查和 Ruff 静态检查通过，并实际启动服务验证首页、健康检查及安全响应头。完整记录见 [部署与健壮性优化](docs/迭代记录-部署与健壮性优化.md)。
+
 ### 2026-11-13：修正简历训练统计口径
 
 本轮修复了不同招聘描述的简历报告被合并统计的问题，避免将更换 JD 引起的分数差异误认为训练进步或退步。
@@ -42,6 +55,14 @@ python server.py --port 8080
 
 首次启动会创建 SQLite 数据库 data/career_lab.sqlite3。重启后可继续查看历史。可通过 --db 指定独立的数据库文件，用于答辩演示或测试。
 
+如需让同一可信局域网内的其他设备访问，可显式监听所有网卡：
+
+~~~powershell
+python server.py --host 0.0.0.0 --port 8000
+~~~
+
+服务会在启动时提示网络安全风险。当前版本没有登录、用户隔离和访问控制，只应在可信局域网内临时使用，不应直接暴露到公网。可通过 `GET /api/health` 检查服务和数据库状态。
+
 ### 启用 DeepSeek 文字面试
 
 1. 在[DeepSeek 开放平台](https://platform.deepseek.com/)创建有调用权限的 API Key。
@@ -62,7 +83,7 @@ python server.py --port 8080
 
 3. 进入「模拟面试」，勾选「使用 DeepSeek 生成题目与点评」，选择岗位和题数。逐题填写文字回答后，报告会显示点评、优点和下一次可尝试的改进。
 
-默认使用 https://api.deepseek.com 和 deepseek-flash，以非思考模式生成 JSON。可以通过 DEEPSEEK_MODEL 更换为支持 JSON 输出的 DeepSeek 模型。DEEPSEEK_BASE_URL 可设置为官方地址 https://api.deepseek.com 或 https://api.deepseek.com/v1。[接口文档](https://api-docs.deepseek.com/api/create-chat-completion/) · [结构化输出文档](https://api-docs.deepseek.com/guides/json_mode/)
+默认使用 https://api.deepseek.com 和 deepseek-flash，以非思考模式生成 JSON。可以通过 DEEPSEEK_MODEL 更换为支持 JSON 输出的 DeepSeek 模型。DEEPSEEK_BASE_URL 可设置为官方地址 https://api.deepseek.com 或 https://api.deepseek.com/v1。DEEPSEEK_TIMEOUT_SECONDS 可设置 1–120 秒的请求超时，默认 20 秒。[接口文档](https://api-docs.deepseek.com/api/create-chat-completion/) · [结构化输出文档](https://api-docs.deepseek.com/guides/json_mode/)
 
 API Key 由后端读取，启动时输入的密钥仅保留在本次服务进程中。启用 DeepSeek 时，出题请求发送岗位与技能，点评请求发送题目、评分要点和回答。请使用去标识化的练习内容。简历诊断在本机处理。关闭 DeepSeek 选项或未配置密钥时，可直接使用本地文字面试。
 
@@ -162,6 +183,7 @@ flowchart LR
 | 方法与路径 | 输入 | 返回 |
 | --- | --- | --- |
 | GET /api/roles | 无 | 岗位 ID 和名称 |
+| GET /api/health | 无 | 服务和数据库健康状态 |
 | POST /api/resumes | role、resume、可选 description | 记录 ID 和诊断报告 |
 | POST /api/resumes/import | application/pdf 二进制文件 | 提取正文与页数 |
 | GET /api/interviews/config | 无 | DeepSeek 是否已配置 |

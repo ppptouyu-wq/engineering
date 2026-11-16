@@ -50,7 +50,10 @@ def training_analytics(records):
         dimensions = defaultdict(list)
         for item in items:
             for dimension in item["dimensions"]:
-                dimensions[dimension["label"]].append(dimension["score"])
+                label = dimension.get("label")
+                score = dimension.get("score")
+                if isinstance(label, str) and isinstance(score, (int, float)) and not isinstance(score, bool):
+                    dimensions[label].append(score)
         scores = [item["score"] for item in items]
         groups.append({
             "kind": kind, "role": role, "method": method, "difficulty": difficulty,

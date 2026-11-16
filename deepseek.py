@@ -10,9 +10,9 @@ from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 from engine import MAX_RESUME_LENGTH, MIN_RESUME_LENGTH
 
-
 DEFAULT_BASE_URL = "https://api.deepseek.com"
 DEFAULT_MODEL = "deepseek-flash"
+DEFAULT_TIMEOUT = 20
 SCORE_DIMENSIONS = (
     ("relevance", "切题与完整性", "是否直接回答题目并覆盖关键要求", 0.35),
     ("accuracy", "准确与合理性", "方案和论证是否合理，关键概念是否准确", 0.40),
@@ -48,7 +48,8 @@ def checked_score(value):
 
 
 class DeepSeekClient:
-    def __init__(self, api_key, base_url=DEFAULT_BASE_URL, model=DEFAULT_MODEL):
+    def __init__(self, api_key, base_url=DEFAULT_BASE_URL, model=DEFAULT_MODEL,
+                 timeout=DEFAULT_TIMEOUT):
         url = urlsplit(base_url)
         host = url.hostname or ""
         supported_host = host == "api.deepseek.com"
@@ -58,6 +59,9 @@ class DeepSeekClient:
         self.url = base_url.rstrip("/") + "/chat/completions"
         self.model = model
         self.api_key = api_key
+        if isinstance(timeout, bool) or not isinstance(timeout, (int, float)) or not 1 <= timeout <= 120:
+            raise ValueError("DEEPSEEK_TIMEOUT_SECONDS 必须在 1–120 秒之间。")
+        self.timeout = timeout
         self.opener = build_opener(NoRedirect())
 
     @classmethod
@@ -67,7 +71,12 @@ class DeepSeekClient:
             return None
         base_url = os.environ.get("DEEPSEEK_BASE_URL", "").strip() or DEFAULT_BASE_URL
         model = os.environ.get("DEEPSEEK_MODEL", "").strip() or DEFAULT_MODEL
-        return cls(key, base_url, model)
+        raw_timeout = os.environ.get("DEEPSEEK_TIMEOUT_SECONDS", "").strip()
+        try:
+            timeout = float(raw_timeout) if raw_timeout else DEFAULT_TIMEOUT
+        except ValueError:
+            raise ValueError("DEEPSEEK_TIMEOUT_SECONDS 必须是数字。") from None
+        return cls(key, base_url, model, timeout)
 
     def request_json(self, instructions, data):
         request = Request(
@@ -86,7 +95,7 @@ class DeepSeekClient:
             method="POST",
         )
         try:
-            with self.opener.open(request, timeout=20) as response:
+            with self.opener.open(request, timeout=self.timeout) as response:
                 body = json.loads(response.read(256_000))
             choice = body["choices"][0]
             if choice.get("finish_reason") != "stop":

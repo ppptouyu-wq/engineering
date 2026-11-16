@@ -3,6 +3,7 @@
 import json
 import sqlite3
 from contextlib import contextmanager
+from numbers import Real
 from pathlib import Path
 
 
@@ -59,11 +60,17 @@ class Store:
     def connect(self):
         db = sqlite3.connect(self.path, timeout=10)
         db.row_factory = sqlite3.Row
+        db.execute("PRAGMA busy_timeout = 10000")
+        db.execute("PRAGMA synchronous = NORMAL")
         try:
             with db:
                 yield db
         finally:
             db.close()
+
+    def ping(self):
+        with self.connect() as db:
+            db.execute("SELECT 1").fetchone()
 
     def create(self, record_id, kind, role, payload, report=None):
         with self.connect() as db:
@@ -186,7 +193,23 @@ class Store:
                        json_extract(report, '$.description') AS description
                 FROM records WHERE report IS NOT NULL ORDER BY created_at, id
             """)
-            return [{**dict(row), "dimensions": json.loads(row["dimensions"])} for row in rows]
+            records = []
+            for row in rows:
+                if not isinstance(row["score"], Real) or isinstance(row["score"], bool):
+                    continue
+                dimensions = json.loads(row["dimensions"]) if row["dimensions"] is not None else []
+                if not isinstance(dimensions, list):
+                    dimensions = []
+                dimensions = [
+                    {"label": item["label"], "score": item["score"]}
+                    for item in dimensions
+                    if isinstance(item, dict)
+                    and isinstance(item.get("label"), str)
+                    and isinstance(item.get("score"), Real)
+                    and not isinstance(item.get("score"), bool)
+                ]
+                records.append({**dict(row), "dimensions": dimensions})
+            return records
 
     def training_counts(self):
         with self.connect() as db:

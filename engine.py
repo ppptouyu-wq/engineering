@@ -5,7 +5,6 @@ from statistics import mean
 
 from question_bank import ROLES
 
-
 MIN_RESUME_LENGTH = 20
 MAX_RESUME_LENGTH = 12000
 
@@ -56,10 +55,10 @@ def resume_report(resume, role, description):
     lines = [line.strip() for line in resume.splitlines() if line.strip()]
     sections = [
         title for title, pattern in SECTIONS.items()
-        if any(re.match(rf"^[#\s*·【\[\d.、-]*(?:{pattern})\s*(?:[：:】\]]|$)", line, re.I) for line in lines)
+        if any(re.match(rf"^[#\s*·【\[\d.、-]*(?:{pattern})\s*(?:[：:】\]]|$)", line, re.IGNORECASE) for line in lines)
     ]
     evidence = [line for line in dict.fromkeys(lines) if re.search(ACTION, line)]
-    quantified = [line for line in evidence if re.search(METRIC, line, re.I)]
+    quantified = [line for line in evidence if re.search(METRIC, line, re.IGNORECASE)]
     dimensions = [
         {"label": "岗位匹配", "score": round(100 * len(matched) / len(terms)),
          "detail": f"覆盖 {len(matched)} / {len(terms)} 个{'岗位描述' if custom_terms else '岗位预设'}关键词"},
@@ -111,7 +110,7 @@ def interview_report(questions, answers):
         coverage = round(100 * sum(hits) / len(hits))
         length = len(re.findall(r"[\u4e00-\u9fff]|[A-Za-z0-9]+", answer))
         detail = min(100, round(100 * length / 85))
-        has_evidence = bool(re.search(METRIC, answer, re.I)
+        has_evidence = bool(re.search(METRIC, answer, re.IGNORECASE)
                             or re.search(r"日志|对照组|执行计划|测试用例|压测|验收|复盘|实验", answer))
         evidence = 100 if has_evidence else 0
         feedback.append({

@@ -21,9 +21,12 @@ def extract_pdf(content):
         if not 1 <= len(reader.pages) <= 10:
             raise ResumeFileError("简历 PDF 需为 1–10 页。")
         parts = []
+        characters = 0
         for page in reader.pages:
-            parts.append(page.extract_text() or "")
-            if sum(len(part) for part in parts) > 12000:
+            part = page.extract_text() or ""
+            parts.append(part)
+            characters += len(part)
+            if characters > 12000:
                 raise ResumeFileError("PDF 正文超过 12,000 字符，请精简后上传。")
         text = "\n".join(parts).strip()
         if len(text) < 20:
@@ -31,5 +34,5 @@ def extract_pdf(content):
         return {"text": text, "pages": len(reader.pages)}
     except ResumeFileError:
         raise
-    except Exception:
+    except Exception:  # noqa: BLE001 - 统一转换第三方 PDF 解析器的多种异常。
         raise ResumeFileError("无法解析该 PDF，请重新导出为文字型 PDF 后重试。") from None
